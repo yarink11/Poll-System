@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Page</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .question {
+            margin: 20px 0;
+            font-size: 18px;
+            color: #555;
+        }
+
+        .answer {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .answer:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Hello</h1>
+        <h4 id="hello_text"></h4>
+        <!-- the question and answers will be read with AJAX -->
+        <div id="question" class="question"></div>
+        <button id="1" class="answer" data-answer="1" onclick="send_answer(1)"></button>
+        <button id="2" class="answer" data-answer="2" onclick="send_answer(2)"></button>
+        <button id="3" class="answer" data-answer="3" onclick="send_answer(3)"></button>
+        <button id="4" class="answer" data-answer="4" onclick="send_answer(4)"></button>
+    </div>
+    <script>
+
+        let email = document.cookie.split('=')[1].split('_')[0]
+        email = decodeURIComponent(email)
+        document.getElementById('hello_text').textContent = `${email}`
+        document.addEventListener('DOMContentLoaded', async function () {
+            await loadnextquestion()
+        })
+
+        async function loadnextquestion() {
+            let currentquestionid = localStorage.getItem('currentquestionid')
+            if (!currentquestionid) {
+                currentquestionid = 1
+            }
+            else { currentquestionid = parseInt(currentquestionid) }
+            console.log(`Fetching question with ID: ${currentquestionid}`)
+            try {
+                const questionrespond = await fetch(`http://localhost:3000/api/questions/${currentquestionid}`)
+                console.log(`Response status: ${questionrespond.status}`)
+                if (questionrespond.status === 404) {
+                    console.log('No more questions')
+                    localStorage.removeItem('currentquestionid')
+                    window.location.href = 'finished.html'
+                    return;
+                }
+                const question = await questionrespond.json()
+                document.getElementById('question').textContent = question.question+"?"
+                document.getElementById('1').textContent = question.firstanswer
+                document.getElementById('2').textContent = question.secondanswer
+                document.getElementById('3').textContent = question.thirdanswer
+                document.getElementById('4').textContent = question.fourthanswer
+                localStorage.setItem('currentquestionid', currentquestionid)
+            } catch (e) {
+                console.error('Error fetching question:', e)
+                alert('Failed to fetch the next question.')
+            }
+        }
+
+        async function send_answer(answer_number) {
+            const currentquestionid = localStorage.getItem('currentquestionid')
+            try {
+                const response = await fetch(`http://localhost:3000/api/answers/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        selectedanswer: answer_number,
+                        userid: document.cookie.split('_')[1],
+                        questionid: localStorage.getItem("currentquestionid")
+                    })
+                })
+                console.log(`Answer submit response status: ${response.status}`)
+                if (response.status === 409) {
+                    alert("You have already answered this question.")
+                    let nextquestionid = parseInt(currentquestionid) + 1
+                    localStorage.setItem("currentquestionid", nextquestionid)
+                    await loadnextquestion()
+                } else if (response.ok) {
+                    alert("Answer submitted successfully!")
+                    let nextquestionid = parseInt(currentquestionid) + 1
+                    localStorage.setItem("currentquestionid", nextquestionid)
+                    await loadnextquestion()
+                } else {
+                    console.error('Error submitting answer:', response.statusText)
+                    alert("Failed to submit answer.")
+                }
+            } catch (e) {
+                console.error('Error submitting answer:', e)
+                alert("Failed to submit answer.")
+            }
+        }
+
+    </script>
+</body>
+
+</html>

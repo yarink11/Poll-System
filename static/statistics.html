@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics page</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 80%;
+            max-width: 800px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            margin-top: 20px;
+            text-align: left;
+            max-height: 400px; /* Set a maximum height */
+            overflow-y: auto;  /* Enable vertical scrolling */
+            width: 100%;
+        }
+
+        .question {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Statistics</h1>
+        <br />
+        <button class="stat" onclick="countoptionsofquestion()">Question with Option Counts</button>
+        <br />
+        <button class="stat" onclick="totalanswersofquestion()">Total Answers of a Question</button>
+        <br />
+        <button class="stat" onclick="useranswers()">Count User Answers</button>
+        <br />
+        <button class="stat" onclick="numberquestionsanswered()">Total Questions Answered by User</button>
+        <br />
+        <button class="stat" onclick="totalquestions()">Total Questions and Answers Counts</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        async function countoptionsofquestion() {
+            const questionid = prompt('Enter Question ID:')
+            const result = await fetch(`http://localhost:3000/api/statistics/question/options/${questionid}`)
+            const resultjson = await result.json()
+            console.log(resultjson)
+            const requiredfields = ['option1', 'option2', 'option3', 'option4']
+            for (const field of requiredfields) {
+                if (!resultjson.counts[field]) {
+                    resultjson.counts[field] = 0
+                }
+            }
+            document.getElementById('result').innerHTML = `<p>Question ID: ${resultjson.question.id}</p>
+                    <p>${resultjson.question.question}?</p>
+                    <p>1. ${resultjson.question.firstanswer}</p>
+                    <p>2. ${resultjson.question.secondanswer}</p>
+                    <p>3. ${resultjson.question.thirdanswer}</p>
+                    <p>4. ${resultjson.question.fourthanswer}</p>
+                    <p>Option 1 count: ${resultjson.counts.option1}</p>
+                    <p>Option 2 count: ${resultjson.counts.option2}</p>
+                    <p>Option 3 count: ${resultjson.counts.option3}</p>
+                    <p>Option 4 count: ${resultjson.counts.option4}</p>`
+        }
+
+        async function totalanswersofquestion() {
+            const questionid = prompt('Enter Question ID:');
+            const result = await fetch(`http://localhost:3000/api/statistics/question/total/${questionid}`)
+            const resultjson = await result.json()
+            document.getElementById('result').innerHTML = `<p>Question ID: ${resultjson.question.id}</p>
+                    <p>${resultjson.question.question}?</p>
+                    <p>1. ${resultjson.question.firstanswer}</p>
+                    <p>2. ${resultjson.question.secondanswer}</p>
+                    <p>3. ${resultjson.question.thirdanswer}</p>
+                    <p>4. ${resultjson.question.fourthanswer}</p>
+                    <p>Users who answered this question: ${resultjson.total}</p>`
+        }
+
+        async function useranswers() {
+            const userid = prompt('Enter User ID:');
+            const result = await fetch(`http://localhost:3000/api/statistics/user/answers/${userid}`)
+            const resultjson = await result.json()
+            console.log(resultjson)
+            const write = document.getElementById('result')
+            write.innerHTML = `<p>Name: ${resultjson.name}</p>`
+            resultjson.answer.forEach(answerdata => {
+                const questiondiv = document.createElement('div')
+                questiondiv.innerHTML = `<p>Question ID: ${answerdata.questionid}</p>
+                    <p>${answerdata.question}?</p>
+                    <p>1. ${answerdata.firstanswer}</p>
+                    <p>2. ${answerdata.secondanswer}</p>
+                    <p>3. ${answerdata.thirdanswer}</p>
+                    <p>4. ${answerdata.fourthanswer}</p>
+                    <p>User select option number: ${answerdata.selectedanswer}</p>`
+                write.appendChild(questiondiv)
+            })
+
+        }
+
+        async function numberquestionsanswered() {
+            const userid = prompt('Enter User ID:');
+            const result = await fetch(`http://localhost:3000/api/statistics/user/total/${userid}`)
+            const resultjson = await result.json()
+            document.getElementById('result').innerHTML = `<p>Name: ${resultjson.name}</p>
+                    <p>User answered on: ${resultjson.total} questions</p>`
+        }
+        async function totalquestions() {
+            const result = await fetch(`http://localhost:3000/api/statistics/questions/total`)
+            const resultjson = await result.json()
+            console.log(resultjson)
+            const write = document.getElementById('result')
+            write.innerHTML = ''
+            resultjson.forEach(questiondata => {
+                const questiondiv = document.createElement('div')
+                const requiredfields = ['option1', 'option2', 'option3', 'option4']
+                for (const field of requiredfields) {
+                    if (!questiondata.counts[field]) {
+                        questiondata.counts[field] = 0
+                    }
+                }
+                questiondiv.innerHTML = `<p>Question ID: ${questiondata.question.id}</p>
+                    <p>${questiondata.question.question}?</p>
+                    <p>1. ${questiondata.question.firstanswer}</p>
+                    <p>2. ${questiondata.question.secondanswer}</p>
+                    <p>3. ${questiondata.question.thirdanswer}</p>
+                    <p>4. ${questiondata.question.fourthanswer}</p>
+                    <p>Option 1 count: ${questiondata.counts.option1}</p>
+                    <p>Option 2 count: ${questiondata.counts.option2}</p>
+                    <p>Option 3 count: ${questiondata.counts.option3}</p>
+                    <p>Option 4 count: ${questiondata.counts.option4}</p>`
+                write.appendChild(questiondiv)
+
+            })
+        }
+    </script>
+</body>
+
+</html>
