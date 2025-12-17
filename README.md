@@ -32,10 +32,10 @@ If needed, update the configuration in config/default.json with your database cr
 
 Use Postman or a browser to send POST requests to the following URLs to create the tables:
 
-Table	    URL for creating the table
-Users	    http://localhost:3000/api/users/table/users-create-table
-Questions	http://localhost:3000/api/questions/table/questions-create-table
-Answers	    http://localhost:3000/api/answers/table/answers-create-table
+|Table|URL for creating the table|
+|Users|http://localhost:3000/api/users/table/users-create-table|
+|Questions|http://localhost:3000/api/questions/table/questions-create-table|
+|Answers|http://localhost:3000/api/answers/table/answers-create-table|
 
 5. **Start the project**
 
